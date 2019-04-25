@@ -18,32 +18,11 @@ def craftPomFile(listOfDeps):
     for dep in listOfDeps:
         dependency = ET.SubElement(dependencies, "dependency")
         ET.SubElement(dependency, "groupId").text = dep['org']
-        ET.SubElement(dependency, "artifactID").text = dep['name']
+        ET.SubElement(dependency, "artifactId").text = dep['name']
         ET.SubElement(dependency, "version").text = dep['rev']
 
     return ET.tostring(project, encoding='utf8').decode('utf8')
 
-
-def craftRequirementsFile(listOfDeps):    
-    import xml.etree.cElementTree as ET
-    project = ET.Element("project")
-
-    ET.SubElement(project, "modelVersion").text = "4.0.0"
-    parent = ET.SubElement(project, "parent")
-    ET.SubElement(parent, "artifactId").text = "io.snyk.example"
-    ET.SubElement(parent, "groupId").text = "parent"
-    ET.SubElement(parent, "version").text = "1.0-SNAPSHOT"
-
-    ET.SubElement(project, "artifactId").text = "my-project"
-
-    dependencies = ET.SubElement(project, "dependencies")
-    for dep in listOfDeps:
-        dependency = ET.SubElement(dependencies, "dependency")
-        ET.SubElement(dependency, "groupId").text = dep['org']
-        ET.SubElement(dependency, "artifactID").text = dep['name']
-        ET.SubElement(dependency, "version").text = dep['rev']
-
-    return ET.tostring(project, encoding='utf8').decode('utf8')
 
 def snykAPITest(file, packageManager):
     import requests, os
@@ -62,7 +41,6 @@ def snykAPITest(file, packageManager):
     if packageManager == 'jvm':
         snyk_maven_package_endpoint = "test/maven?org={0}&repository=https%3A%2F%2Frepo1.maven.org%2Fmaven2".format(orgID)
         snyk_endpoint_url = snyk_api_base_url + snyk_maven_package_endpoint
-    
         obj_json_post_body = {
             "encoding": "plain",
             "files": {
@@ -91,13 +69,16 @@ def printSnykResults(rawResponse, isOutputJSON):
     else: 
         import json
         jsonResponse = json.loads(rawResponse)
-        print('Tested %d dependencies' % jsonResponse['dependencyCount'])
-        print('Found %d issues' % (len(jsonResponse['issues']['vulnerabilities'])+len(jsonResponse['issues']['licenses'])))
 
         if len(jsonResponse['issues']['vulnerabilities']) > 0:
-            print(jsonResponse['issues']['vulnerabilities'])
+            print("Vulnerabilities")
+            print(json.dumps(jsonResponse['issues']['vulnerabilities'], indent=4))
         if len(jsonResponse['issues']['licenses']) > 0:
-            print(jsonResponse['issues']['licenses'])
+            print("License issues")
+            print(json.dumps(jsonResponse['issues']['licenses'], indent=4))
+
+        print('Tested %d dependencies' % jsonResponse['dependencyCount'])
+        print('Found %d issues' % (len(jsonResponse['issues']['vulnerabilities'])+len(jsonResponse['issues']['licenses'])))
 
 class SnykTask(Task):
     
